@@ -25,7 +25,7 @@ balance = str(result.balance.balance)
 
 @client.event
 async def on_ready():
-    print(f'{client.user.name} has connected to Discord!')
+    print(f'{client.user.name} connected to Discord!')
     game = discord.Game("Swapping tip.cc currency to Duino!")
     await client.change_presence(status=discord.Status.idle, activity=game)
 
