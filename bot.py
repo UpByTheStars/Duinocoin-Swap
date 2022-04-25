@@ -22,6 +22,19 @@ client = discord.Client()
 ducoclient = DuinoClient()
 result = ducoclient.user(username)
 balance = str(result.balance.balance)
+with open('totalswapped.txt') as f:
+  swapped = f.read()
+if swapped == (''):
+  swapped = ('0')
+  with open('totalswapped.txt', 'w') as f:
+    f.write((str(swapped)))
+
+with open('giveaway.txt') as f:
+  giveaway = f.read()
+if giveaway == (''):
+  giveaway = ('')
+  with open('giveaway.txt', 'w') as f:
+    f.write(giveaway)
 
 @client.event
 async def on_ready():
@@ -34,7 +47,7 @@ async def on_ready():
 async def on_member_join(member):
     await member.create_dm()
     await member.dm_channel.send(
-        f'Hi {member.name}, welcome to the Duino/tip.cc swap!'
+        f'Hi {member.name}, welcome to Duino/tip.cc swap!'
         
     )
 
@@ -111,7 +124,7 @@ async def on_message(message):
                 amount = amount.replace("]", "")
                 amount = amount.replace(" ", "")
                 sendamount = (float(amount)) / (float(f"{price:f}"))
-                sendamount = (float(sendamount)) * 950000
+                sendamount = (float(sendamount)) * 0.95
                 amount = (str(amount)) 
                 
                 balance = str(result.balance.balance)
@@ -128,8 +141,16 @@ async def on_message(message):
                   api_url = "https://server.duinocoin.com/transaction?username=UpByTheStars&password=" + PASSWORD + "&recipient=" + sendto + "&amount=" + sendamount
                   response = requests.get(api_url)
                   response.json()
+                  with open('totalswapped.txt') as f:
+                    swapped = f.read()
+                  swapped = (float(swapped)) + (float(sendamount))
+                  with open('totalswapped.txt', 'w') as f:
+                    f.write((str(swapped)))
                   embed=discord.Embed(title=("Sent " + sendamount + " Duino to the address " + sendto + "! Check your wallet for the transaction!"), color=0xff9500)
+                  logs=discord.Embed(title=(sendamount + " Duino was just sent to " + sendto + "!"), color=0xff9500)
+                  channel = client.get_channel(963224120072503336)
                   await message.channel.send(embed=embed)
+                  await channel.send(embed=logs)
           except asyncio.TimeoutError:
             embed=discord.Embed(title=("Timed out! Please try tipping again!"), color=0xff9500)
             await message.channel.send(embed=embed)
@@ -261,7 +282,59 @@ async def on_message(message):
       embed.add_field(name="!funds", value="See the bots current Duino funds", inline=False)
       embed.add_field(name="!convert (amount)", value="Check the value of a certain amount of Duino", inline=False)
       embed.add_field(name="!value $(amount)", value="Check how much a $ amount is in Duino", inline=True)
+      embed.add_field(name="!need (amount)", value="See how much you need to tip the bot to receive a certain amount of Duino", inline=True)
       await message.channel.send(embed=embed)
 
+
+
+    if message.content.startswith('!tip'):
+      if message.author.id == 818913815814340698:
+        tip = message.content.split(" ",1)[1:]
+        whotosend = message.content.split(" ",2)[2:]
+        whotosend = (str(whotosend))
+        whotosend = whotosend.replace("[", "")
+        whotosend = whotosend.replace("]", "")
+        whotosend = whotosend.replace("'", "")
+        tip = (str(tip))
+        tip = tip.replace("[", "")
+        tip = tip.replace("'", "")
+        tip = tip.replace("]", "")
+        tip = tip.split()[0]
+        tip = tip.replace("[", "")
+        tip = tip.replace("'", "")
+        tip = tip.replace("]", "")
+        balance = str(result.balance.balance)
+        balance = (float(balance))
+        tip = (float(tip))
+        if balance < tip:
+          embed=discord.Embed(title=('I cannot afford that transaction!'),color=0xff9500)
+          await message.channel.send(embed=embed)
+        elif balance >= tip:
+          tip = (str(tip))
+          api_url = "https://server.duinocoin.com/transaction?username=UpByTheStars&password=" + PASSWORD + "&recipient=" + whotosend + "&amount=" + tip
+          response = requests.get(api_url)
+          response.json()
+          with open('giveaway.txt') as f:
+            giveaway = f.read()
+          giveaway = (float(giveaway)) + (float(tip))
+          with open('giveaway.txt', 'w') as f:
+            f.write(str(giveaway))
+          embed=discord.Embed(title=(author + ' just tipped ' + whotosend + ' ' + tip + ' Duino!'),color=0xff9500)
+          await message.channel.send(embed=embed)
+
+
+    if message.content.startswith('!stats'):
+      with open('totalswapped.txt') as f:
+        swapped = f.read()
+      with open('giveaway.txt') as f:
+        giveaway = f.read()
+      swapped = (float(swapped))
+      giveaway = (float(giveaway))
+      swapped = (round(swapped,2))
+      giveaway = (round(giveaway,2))
+      swapped = (str(swapped))
+      giveaway = (str(giveaway))
+      embed=discord.Embed(title=('So far Duinocoin Swap has swapped ' + swapped + ' Duino worth of crypto (rounded to the nearest two decimals)! We have also tipped ' + giveaway + ' Duino to our users!'),color=0xff9500)
+      await message.channel.send(embed=embed)
 
 client.run(TOKEN)
